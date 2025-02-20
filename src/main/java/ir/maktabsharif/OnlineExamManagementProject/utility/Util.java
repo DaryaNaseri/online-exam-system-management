@@ -1,5 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.utility;
 
+import ir.maktabsharif.OnlineExamManagementProject.exception.AccountNotVerifiedException;
+import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 
@@ -20,6 +22,13 @@ public class Util {
                 user.getRole(),
                 user.getStatus()
         );
+    }
+
+
+    public static void validateUserStatus(User user) {
+        if (user.getStatus().equals(RegistrationStatus.PENDING)) {
+            throw new AccountNotVerifiedException("Account must be approved first!");
+        }
     }
 
 }

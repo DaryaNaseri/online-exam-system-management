@@ -53,11 +53,12 @@ public class UserServiceImpl implements UserService {
 
     private void saveUser(UserDto.SignupRequest entity, UserRole role) {
         User user;
+        String password = BCryptPasswordEncode.encodeBCryptPassword(entity.password());
         if (role == UserRole.STUDENT) {
-            user = new Student(entity.email(), entity.username(), entity.password(), role, RegistrationStatus.PENDING);
+            user = new Student(entity.email(),password, entity.username(), role, RegistrationStatus.PENDING);
             studentRepository.save((Student) user);
         } else if (role == UserRole.TEACHER) {
-            user = new Teacher(entity.email(), entity.username(), entity.password(), role, RegistrationStatus.PENDING);
+            user = new Teacher(entity.email(), password, entity.username(), role, RegistrationStatus.PENDING);
             teacherRepository.save((Teacher) user);
         }
     }
@@ -97,14 +98,14 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public List<User> searchUsersByRole(String searchText) {
-        if (searchText == null || searchText.trim().isEmpty()) {
+    public List<User> searchUsersByRole(String role) {
+        if (role == null || role.trim().isEmpty()) {
             throw new RuntimeException("searchText cannot be null or empty");
         }
 
-        UserRole role = safeGetUserRole(searchText);
+        UserRole userRole = safeGetUserRole(role);
 
-        return userRepository.findByRole(role);
+        return userRepository.findByRole(userRole);
     }
 
 
@@ -119,6 +120,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto.Response authenticate(UserDto.LoginRequest loginRequest) {
+
+
 
         User user = userRepository.findUserByUsername(loginRequest.username())
                 .orElseThrow(() -> new NotFoundException("User not found with username: " + loginRequest.username()));
@@ -160,6 +163,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> searchUsersByFirstNameLastNameUsername(String searchText) {
         return userRepository.findBySearchedWord(searchText.trim().toLowerCase());
+    }
+
+    @Override
+    public List<UserDto.Response> filterByRoleAndSearchedWord(String role, String searchedWord) {
+        if (role == null || role.trim().isEmpty()) {
+            throw new RuntimeException("searchText cannot be null or empty");
+        }
+
+        UserRole userRole = safeGetUserRole(role);
+        List<User> users = userRepository.filterByRoleAndSearchedWord(userRole, searchedWord.trim().toLowerCase());
+        return users.stream().map(Util::convertToUserResponse).collect(Collectors.toList());
     }
 
 

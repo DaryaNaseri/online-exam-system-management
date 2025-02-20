@@ -32,7 +32,6 @@ public class Course extends BaseEntity<Long> {
             joinColumns = @JoinColumn(name = "course_id"),
             inverseJoinColumns = @JoinColumn(name = "student_id")
     )
-    //todo: you have to inject this property or right here
     private List<Student> students = new ArrayList<>();
 
     public static CourseBuilder builder() {

@@ -8,6 +8,7 @@ import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.service.CourseService;
 import ir.maktabsharif.OnlineExamManagementProject.service.Impl.CourseServiceImpl;
 import ir.maktabsharif.OnlineExamManagementProject.service.Impl.UserServiceImpl;
+import ir.maktabsharif.OnlineExamManagementProject.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,11 +25,11 @@ import java.util.Optional;
 public class CourseController {
 
     private final CourseService courseService;
-    private final UserServiceImpl userServiceImpl;
+    private final UserService userService;
 
-    public CourseController(CourseServiceImpl courseService, UserServiceImpl userServiceImpl) {
+    public CourseController(CourseServiceImpl courseService, UserService userService) {
         this.courseService = courseService;
-        this.userServiceImpl = userServiceImpl;
+        this.userService = userService;
     }
 
     @PostMapping("/create")
@@ -58,84 +60,106 @@ public class CourseController {
 
     @PostMapping("/{courseId}/add-student/{userId}")
     public ResponseEntity<String> addStudentToCourse(@PathVariable Long courseId, @PathVariable Long userId) {
+        Optional<CourseDto.Response> courseOpt = courseService.findById(courseId);
+        Optional<UserDto.Response> studentOpt = userService.findById(userId);
 
-        CourseDto.Response course = courseService.findById(courseId).orElse(null);
-        UserDto.Response student = userServiceImpl.findById(userId).orElse(null);
-        if (student == null || course == null) {
+        if (courseOpt.isEmpty() || studentOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Course or Student not found");
-        } else if (student.role() != UserRole.STUDENT) {
-            return ResponseEntity.badRequest().body("this id is not a student");
         }
-        courseService.addStudentToCourse(course, student);
+
+        UserDto.Response student = studentOpt.get();
+        if (student.role() != UserRole.STUDENT) {
+            return ResponseEntity.badRequest().body("This user is not a student");
+        }
+
+        courseService.addStudentToCourse(courseOpt.get(), student);
         return ResponseEntity.ok("Student added to course");
     }
 
+
     @PostMapping("/{courseId}/assign-teacher/{userId}")
     public ResponseEntity<String> assignTeacherToCourse(@PathVariable Long courseId, @PathVariable Long userId) {
-        CourseDto.Response courseResponse = courseService.findById(courseId).orElse(null);
-        UserDto.Response teacher = userServiceImpl.findById(userId).orElse(null);
-        if (courseResponse == null && teacher == null) {
+        Optional<CourseDto.Response> courseOpt = courseService.findById(courseId);
+        Optional<UserDto.Response> teacherOpt = userService.findById(userId);
+
+        if (courseOpt.isEmpty() || teacherOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Course or Teacher not found");
-        } else if (teacher.role() != UserRole.TEACHER) {
-            return ResponseEntity.badRequest().body("this id is not a teacher");
         }
-        courseService.assignTeacherToCourse(courseResponse, teacher);
+
+        UserDto.Response teacher = teacherOpt.get();
+        if (teacher.role() != UserRole.TEACHER) {
+            return ResponseEntity.badRequest().body("This user is not a teacher");
+        }
+
+        courseService.assignTeacherToCourse(courseOpt.get(), teacher);
         return ResponseEntity.ok("Teacher assigned to course");
     }
 
+
     @PostMapping("/{courseId}/delete-student/{userId}")
     public ResponseEntity<String> deleteStudentFromCourse(@PathVariable Long courseId, @PathVariable Long userId) {
+        Optional<CourseDto.Response> courseOpt = courseService.findById(courseId);
+        Optional<UserDto.Response> studentOpt = userService.findById(userId);
 
-        CourseDto.Response course = courseService.findById(courseId).orElse(null);
-        UserDto.Response student = userServiceImpl.findById(userId).orElse(null);
-
-        if (student == null || course == null) {
+        if (courseOpt.isEmpty() || studentOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Course or Student not found");
-        } else if (student.role() != UserRole.STUDENT) {
-            return ResponseEntity.badRequest().body("this id is not a student");
         }
-        courseService.deleteStudentFromCourse(course, student);
+
+        UserDto.Response student = studentOpt.get();
+        if (student.role() != UserRole.STUDENT) {
+            return ResponseEntity.badRequest().body("This user is not a student");
+        }
+
+        courseService.deleteStudentFromCourse(courseOpt.get(), student);
         return ResponseEntity.ok("Student deleted from course");
     }
 
     @PostMapping("/{courseId}/unassign-teacher/{userId}")
     public ResponseEntity<String> unassignTeacherFromCourse(@PathVariable Long courseId, @PathVariable Long userId) {
+        Optional<CourseDto.Response> courseOpt = courseService.findById(courseId);
+        Optional<UserDto.Response> teacherOpt = userService.findById(userId);
 
-        CourseDto.Response course = courseService.findById(courseId).orElse(null);
-        UserDto.Response teacher = userServiceImpl.findById(userId).orElse(null);
-
-        if (teacher == null || course == null) {
+        if (courseOpt.isEmpty() || teacherOpt.isEmpty()) {
             return ResponseEntity.badRequest().body("Course or Teacher not found");
-        } else if (teacher.role() != UserRole.TEACHER) {
-            return ResponseEntity.badRequest().body("this id is not a teacher");
         }
-        courseService.unassignTeacherFromCourse(course, teacher);
+
+        UserDto.Response teacher = teacherOpt.get();
+        if (teacher.role() != UserRole.TEACHER) {
+            return ResponseEntity.badRequest().body("This user is not a teacher");
+        }
+
+        courseService.unassignTeacherFromCourse(courseOpt.get(), teacher);
         return ResponseEntity.ok("Teacher unassigned from course");
     }
 
+
     @GetMapping("/{courseId}/allStudents")
-    public List<UserDto.Response> allStudentsCourse(@PathVariable Long courseId) {
-        CourseDto.Response course = courseService.findById(courseId).orElse(null);
-        if (course != null) {
-            return courseService.findAllStudents(courseId);
-        } else throw new IllegalArgumentException("Course not found");
+    public ResponseEntity<List<UserDto.Response>> allStudentsCourse(@PathVariable Long courseId) {
+        try {
+            List<UserDto.Response> students = courseService.findAllStudents(courseId);
+            return ResponseEntity.ok(students);
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
     }
 
+
     @GetMapping("/{courseId}/teacher")
-    public UserDto.Response teachersCourse(@PathVariable Long courseId) {
-        CourseDto.Response response = courseService.findById(courseId).orElse(null);
-        if (response != null) {
+    public ResponseEntity<UserDto.Response> teachersCourse(@PathVariable Long courseId) {
+        Optional<CourseDto.Response> responseOpt = courseService.findById(courseId);
+        if (responseOpt.isPresent()) {
             Optional<UserDto.Response> teacher = courseService.findTeacher(courseId);
             if (teacher.isPresent()) {
-                return teacher.get();
+                return ResponseEntity.ok(teacher.get());
             }
         }
-        throw new IllegalArgumentException("Course not found");
+        return ResponseEntity.badRequest().body(null);
     }
+
 
     @DeleteMapping("/delete/{courseId}")
     public ResponseEntity<String> deleteCourse(@PathVariable Long courseId) {
         courseService.deleteById(courseId);
-        return ResponseEntity.ok("Course deleted from course");
+        return ResponseEntity.ok("Course deleted");
     }
 }

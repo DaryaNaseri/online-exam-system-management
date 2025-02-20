@@ -21,6 +21,14 @@ public interface UserRepository extends JpaRepository<User,Long> {
             "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :searchedWord, '%'))")
     List<User> findBySearchedWord(@Param("searchedWord") String searchedWord);
 
+
+    @Query("SELECT u FROM User u WHERE " +
+            "( u.role = :role) AND " +
+            " (LOWER(u.firstName) LIKE LOWER(CONCAT('%', :searchedWord, '%')) " +
+            "OR LOWER(u.lastName) LIKE LOWER(CONCAT('%', :searchedWord, '%')) " +
+            "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :searchedWord, '%')))")
+    List<User> filterByRoleAndSearchedWord(@Param("role") UserRole role, @Param("searchedWord") String searchedWord);
+
     Optional<User> findUserByUsername(String username);
 
     Optional<User> findUserByEmail(String email);

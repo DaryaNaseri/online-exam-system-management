@@ -1,5 +1,6 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
 import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
 import jakarta.validation.constraints.*;
@@ -41,6 +42,7 @@ public interface UserDto {
                     String firstName,
                     String lastName,
                     String email,
+                    @JsonIgnore
                     String password,
                     String username,
                     UserRole role,
@@ -215,7 +217,6 @@ public interface UserDto {
         }
 
     }
-
 
 
 }

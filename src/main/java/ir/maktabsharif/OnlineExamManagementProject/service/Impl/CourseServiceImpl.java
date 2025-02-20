@@ -32,7 +32,7 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, UserRepository userRepository, UserServiceImpl userService) {
+    public CourseServiceImpl(CourseRepository courseRepository, UserRepository userRepository, UserService userService) {
         this.courseRepository = courseRepository;
         this.userRepository = userRepository;
         this.userService = userService;
@@ -104,8 +104,8 @@ public class CourseServiceImpl implements CourseService {
         Optional<Course> byId = courseRepository.findById(id);
         if (byId.isPresent()) {
             courseRepository.delete(byId.get());
-        }else
-        throw new NotFoundException("Course not found");
+        } else
+            throw new NotFoundException("Course not found");
     }
 
 
@@ -117,9 +117,8 @@ public class CourseServiceImpl implements CourseService {
         Course foundCourse = courseRepository.findById(course.id())
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
-        if (user.getStatus().equals(RegistrationStatus.PENDING)) {
-            throw new AccountNotVerifiedException("Account must be approved first!");
-        }
+        Util.validateUserStatus(user);
+
 
         if (!(user instanceof Student student)) {
             throw new IllegalArgumentException("User is not a student");
@@ -139,6 +138,7 @@ public class CourseServiceImpl implements CourseService {
     }
 
 
+
     @Override
     public CourseDto.CourseTeacherDto assignTeacherToCourse(CourseDto.Response course, UserDto.Response teacherResponse) {
         User user = userRepository.findById(teacherResponse.id())
@@ -148,9 +148,7 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
 
-        if (user.getStatus().equals(RegistrationStatus.PENDING)) {
-            throw new AccountNotVerifiedException("Account must be approved first!");
-        }
+        Util.validateUserStatus(user);
 
         if (!(user instanceof Teacher teacher)) {
             throw new IllegalArgumentException("User is not a teacher");

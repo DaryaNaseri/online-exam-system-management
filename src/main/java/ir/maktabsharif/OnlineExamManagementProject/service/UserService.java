@@ -17,13 +17,16 @@ public interface UserService extends BaseService<User> {
 
     Optional<UserDto.Response> findById(Long id);
 
-    List<User> searchUsersByRole(String searchText);
+    List<User> searchUsersByRole(String role);
 
     UserDto.Response authenticate(UserDto.LoginRequest loginRequest);
 
     UserDto.Response editUserInfo(UserDto.EditUserRequest editUserRequest);
 
     List<User> searchUsersByFirstNameLastNameUsername(String searchText);
+
+    List<UserDto.Response> filterByRoleAndSearchedWord(String role, String searchedWord);
+
 
 
 }

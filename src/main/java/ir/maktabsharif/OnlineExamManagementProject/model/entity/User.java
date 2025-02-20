@@ -4,6 +4,7 @@ import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
 import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
 
@@ -13,19 +14,42 @@ import java.time.LocalDateTime;
 @Table(name = "users")
 public class User extends BaseEntity<Long> {
 
+    @Pattern(
+            regexp = "^[A-Z][a-z]+$",
+            message = "The name must start with a capital letter, have at least two letters, and contain no spaces or numbers.")
     private String firstName;
 
+    @Pattern(
+            regexp = "^[A-Z][a-z]+$",
+            message = "The name must start with a capital letter and not contain numbers.")
     private String lastName;
 
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "email must not be blank")
+    @Email(message = "enter email in this format: example@gmail.com ")
     private String email;
 
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "password must not be blank")
+    @Size(min = 6,
+            message = "Password must be at least 6 characters long")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{6,}$",
+            message = "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+    )
     private String password;
 
+    @Column(nullable = false, unique = true)
+    @NotBlank(message = "username must not be blank")
+    @Size(min = 6,
+            message = "username must be have least 6 characters")
     private String username;
 
+    @NotNull(message = "UserRole must not be null")
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @NotNull(message = "status must not be null")
     @Enumerated(EnumType.STRING)
     private RegistrationStatus status;
 
