@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrapper">
+    <form action="users/register">
+        <h2>Signup</h2>
+        <div class="input-field">
+            <input type="email" required>
+            <label>Enter your Email</label>
+            <small style="color: black;">example@email.com</small>
+        </div>
+        <div class="input-field">
+            <input type="text" required>
+            <label>Enter your Username</label>
+            <small style="color: black;">most be at least 6 character</small>
+        </div>
+        <div class="input-field">
+            <input type="password" required>
+            <label>Enter your password</label>
+            <small style="color: black;">most be at least 6 character</small>
+        </div>
+        <button type="submit">Register</button>
+        <div class="register">
+            <p>Do you have an account? <a href="users/login">Register</a></p>
+        </div>
+    </form>
+</div>
+</body>
+</html>
