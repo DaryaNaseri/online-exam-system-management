@@ -10,25 +10,25 @@ import java.util.Optional;
 
 public interface CourseService extends BaseService<Course> {
 
-    void create(CourseDto.CreateCourseRequestDto courseDto);
+    CourseDto.Response create(CourseDto.CreateCourseRequestDto courseDto);
 
     List<CourseDto.Response> findAll();
 
     Optional<CourseDto.Response> findById(Long id);
 
-    CourseDto.CourseStudentsListDto addStudentToCourse(CourseDto.Response course, UserDto.Response studentResponse);
+    CourseDto.CourseStudentsListDto addStudentToCourse(Long courseId, Long studentId);
 
-    CourseDto.CourseTeacherDto assignTeacherToCourse(CourseDto.Response course, UserDto.Response teacherResponse);
+    CourseDto.CourseTeacherDto assignTeacherToCourse(Long courseId, Long userId);
 
-    void deleteStudentFromCourse(CourseDto.Response course, UserDto.Response studentResponse);
+    void deleteStudentFromCourse(Long courseId,Long userId);
 
-    void unassignTeacherFromCourse(CourseDto.Response course, UserDto.Response teacherResponse);
+    void unassignTeacherFromCourse(Long courseId,Long userId);
 
     List<UserDto.Response> findAllStudents(Long courseId);
 
-    Optional<UserDto.Response> findTeacher(Long courseId);
+    UserDto.Response findTeacher(Long courseId);
 
-
+    List<CourseDto.Response> findCoursesByTeacherId(Long teacherId);
 
 
 

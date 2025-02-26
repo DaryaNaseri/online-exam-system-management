@@ -1,9 +1,8 @@
 package ir.maktabsharif.OnlineExamManagementProject.service.Impl;
 
-import ir.maktabsharif.OnlineExamManagementProject.exception.AccountNotVerifiedException;
+import ir.maktabsharif.OnlineExamManagementProject.exception.InvalidInputException;
 import ir.maktabsharif.OnlineExamManagementProject.exception.NotFoundException;
-import ir.maktabsharif.OnlineExamManagementProject.exception.TitleOrCourseCodeMustBeUniqueException;
-import ir.maktabsharif.OnlineExamManagementProject.model.*;
+import ir.maktabsharif.OnlineExamManagementProject.exception.CourseCodeMustBeUniqueException;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.CourseDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Course;
@@ -46,25 +45,23 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Override
-    public void create(CourseDto.CreateCourseRequestDto courseDto) {
-        checkIfCourseExists(courseDto.title(), courseDto.courseCode());
+    public CourseDto.Response create(CourseDto.CreateCourseRequestDto courseDto) {
+        checkIfCourseExists(courseDto.courseCode());
 
-        courseRepository.save(Course
+        Course save = courseRepository.save(Course
                 .builder()
                 .title(courseDto.title())
                 .courseCode(courseDto.courseCode())
                 .startDate(courseDto.startDate())
                 .endDate(courseDto.endDate())
                 .build());
+        return convertToCourseResponse(save);
     }
 
 
-    private void checkIfCourseExists(String title, String courseCode) {
-        if (courseRepository.findCourseByTitle(title).isPresent()) {
-            throw new TitleOrCourseCodeMustBeUniqueException("This title has already been taken.");
-        }
+    private void checkIfCourseExists(String courseCode) {
         if (courseRepository.findCourseByCourseCode(courseCode).isPresent()) {
-            throw new TitleOrCourseCodeMustBeUniqueException("This course code has already been taken.");
+            throw new CourseCodeMustBeUniqueException("This course code has already been taken.");
         }
     }
 
@@ -110,22 +107,22 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Override
-    public CourseDto.CourseStudentsListDto addStudentToCourse(CourseDto.Response course, UserDto.Response studentResponse) {
-        User user = userRepository.findById(studentResponse.id())
+    public CourseDto.CourseStudentsListDto addStudentToCourse(Long courseId, Long studentId) {
+        User user = userRepository.findById(studentId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Course foundCourse = courseRepository.findById(course.id())
+        Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
         Util.validateUserStatus(user);
 
 
         if (!(user instanceof Student student)) {
-            throw new IllegalArgumentException("User is not a student");
+            throw new InvalidInputException("User is not a student");
         }
 
         if (foundCourse.getStudents().contains(user)) {
-            throw new IllegalArgumentException("Student is already enrolled in this course");
+            throw new InvalidInputException("Student is already enrolled in this course");
         }
 
         foundCourse.getStudents().add(student);
@@ -138,24 +135,23 @@ public class CourseServiceImpl implements CourseService {
     }
 
 
-
     @Override
-    public CourseDto.CourseTeacherDto assignTeacherToCourse(CourseDto.Response course, UserDto.Response teacherResponse) {
-        User user = userRepository.findById(teacherResponse.id())
+    public CourseDto.CourseTeacherDto assignTeacherToCourse(Long courseId, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Course foundCourse = courseRepository.findById(course.id())
+        Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
 
         Util.validateUserStatus(user);
 
         if (!(user instanceof Teacher teacher)) {
-            throw new IllegalArgumentException("User is not a teacher");
+            throw new InvalidInputException("User is not a teacher");
         }
 
         if (foundCourse.getTeacher() != null && !foundCourse.getTeacher().equals(teacher)) {
-            throw new IllegalArgumentException("Teacher is already assign in this course");
+            throw new InvalidInputException("Teacher is already assign in this course");
 
         }
 
@@ -170,19 +166,19 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Override
-    public void deleteStudentFromCourse(CourseDto.Response course, UserDto.Response studentResponse) {
-        User user = userRepository.findById(studentResponse.id())
+    public void deleteStudentFromCourse(Long courseId, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Course foundCourse = courseRepository.findById(course.id())
+        Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
         if (!(user instanceof Student student)) {
-            throw new IllegalArgumentException("User is not a student");
+            throw new InvalidInputException("User is not a student");
         }
 
         if (!(foundCourse.getStudents().contains(student))) {
-            throw new IllegalArgumentException("Student isn't already exist in this course");
+            throw new InvalidInputException("Student isn't already exist in this course");
         }
 
         foundCourse.getStudents().remove(student);
@@ -192,20 +188,20 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Override
-    public void unassignTeacherFromCourse(CourseDto.Response course, UserDto.Response teacherResponse) {
-        User user = userRepository.findById(teacherResponse.id())
+    public void unassignTeacherFromCourse(Long courseId, Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Course foundCourse = courseRepository.findById(course.id())
+        Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
 
         if (!(user instanceof Teacher teacher)) {
-            throw new IllegalArgumentException("User is not a teacher");
+            throw new InvalidInputException("User is not a teacher");
         }
 
         if (!(foundCourse.getTeacher().equals(teacher))) {
-            throw new IllegalArgumentException("This teacher is not assign for this course");
+            throw new InvalidInputException("This teacher is not assign for this course");
         }
 
         foundCourse.setTeacher(null);
@@ -219,7 +215,7 @@ public class CourseServiceImpl implements CourseService {
         Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
-        return courseRepository.findStudents(foundCourse)
+        return courseRepository.findStudentsByCourse(foundCourse)
                 .stream()
                 .map(Util::convertToUserResponse)
                 .toList();
@@ -228,13 +224,24 @@ public class CourseServiceImpl implements CourseService {
 
 
     @Override
-    public Optional<UserDto.Response> findTeacher(Long courseId) {
+    public UserDto.Response findTeacher(Long courseId) {
         Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
-        Optional<Teacher> teacher = courseRepository.findTeacher(foundCourse.getCourseCode());
-        return teacher.map(Util::convertToUserResponse);
+        Teacher teacher = courseRepository.findTeacherByCourseCode(
+                        foundCourse.getCourseCode())
+                .orElseThrow(() -> new NotFoundException("No teacher has been assigned to this course yet."));
+        return Util.convertToUserResponse(teacher);
     }
 
 
+    public List<CourseDto.Response> findCoursesByTeacherId(Long teacherId) {
+        User user = userRepository.findById(teacherId).orElseThrow(() -> new NotFoundException("User not found"));
+        if (!(user instanceof Teacher teacher)) {
+            throw new IllegalArgumentException("User is not a teacher");
+        }
+        return courseRepository.findByTeacher(teacher).stream()
+                .map(this::convertToCourseResponse)
+                .toList();
+    }
 }

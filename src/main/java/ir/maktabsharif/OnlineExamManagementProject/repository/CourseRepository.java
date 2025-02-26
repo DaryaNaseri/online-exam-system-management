@@ -17,14 +17,14 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Optional<Course> findByTitle(String courseName);
 
     @Query("SELECT c.teacher FROM Course c WHERE c.courseCode = :courseCode")
-    Optional<Teacher> findTeacher(@Param("courseCode") String courseCode);
+    Optional<Teacher> findTeacherByCourseCode(@Param("courseCode") String courseCode);
 
 
     @Query("SELECT c.students FROM Course c JOIN c.students s WHERE c = :course")
-    List<Student> findStudents(@Param("course") Course course);
+    List<Student> findStudentsByCourse(@Param("course") Course course);
 
+    List<Course> findByTeacher(Teacher teacher);
 
-    Optional<Course> findCourseByTitle(String title);
 
     Optional<Course> findCourseByCourseCode(String courseCode);
 }

@@ -3,10 +3,13 @@ package ir.maktabsharif.OnlineExamManagementProject.model.entity;
 import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
 import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
+import ir.maktabsharif.OnlineExamManagementProject.model.permision.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
@@ -53,6 +56,15 @@ public class User extends BaseEntity<Long> {
     @Enumerated(EnumType.STRING)
     private RegistrationStatus status;
 
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_roles",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<Role> roles = new HashSet<>();
+
     public User(Long aLong, LocalDateTime createdAt, LocalDateTime updatedAt, String firstName, String lastName, String email, String password, String username, UserRole role, RegistrationStatus status) {
 
         super(aLong, createdAt, updatedAt);
@@ -87,8 +99,8 @@ public class User extends BaseEntity<Long> {
 
     }
 
-    public static UserAccountBuilder builder() {
-        return new UserAccountBuilder();
+    public static UserBuilder builder() {
+        return new UserBuilder();
     }
 
     public String getFirstName() {
@@ -147,45 +159,58 @@ public class User extends BaseEntity<Long> {
         this.status = status;
     }
 
-    public static class UserAccountBuilder {
+    public Set<Role> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(Set<Role> roles) {
+        this.roles = roles;
+    }
+
+    public static class UserBuilder {
         private User account;
 
-        public UserAccountBuilder() {
+        public UserBuilder() {
             account = new User();
         }
 
-        public UserAccountBuilder username(String username) {
+        public UserBuilder username(String username) {
             account.setUsername(username);
             return this;
         }
 
-        public UserAccountBuilder password(String password) {
+        public UserBuilder password(String password) {
             account.setPassword(password);
             return this;
         }
 
-        public UserAccountBuilder firstName(String firstName) {
+        public UserBuilder firstName(String firstName) {
             account.setFirstName(firstName);
             return this;
         }
 
-        public UserAccountBuilder lastName(String lastName) {
+        public UserBuilder lastName(String lastName) {
             account.setLastName(lastName);
             return this;
         }
 
-        public UserAccountBuilder email(String email) {
+        public UserBuilder email(String email) {
             account.setEmail(email);
             return this;
         }
 
-        public UserAccountBuilder role(UserRole role) {
+        public UserBuilder role(UserRole role) {
             account.setRole(role);
             return this;
         }
 
-        public UserAccountBuilder status(RegistrationStatus status) {
+        public UserBuilder status(RegistrationStatus status) {
             account.setStatus(status);
+            return this;
+        }
+
+        public UserBuilder roles(Set<Role> roles) {
+            account.setRoles(roles);
             return this;
         }
 

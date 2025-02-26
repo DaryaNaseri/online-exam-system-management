@@ -2,6 +2,8 @@ package ir.maktabsharif.OnlineExamManagementProject.model.entity;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
@@ -14,12 +16,16 @@ import java.util.List;
 @EqualsAndHashCode(of = "title")
 public class Course extends BaseEntity<Long> {
 
+    @NotBlank(message = "title must not be blank")
     private String title;
 
+    @NotBlank(message = "course must have code")
     private String courseCode;
 
+    @NotNull(message = "when course will started? ")
     private LocalDate startDate;
 
+    @NotNull(message = "when course will end? ")
     private LocalDate endDate;
 
     @ManyToOne

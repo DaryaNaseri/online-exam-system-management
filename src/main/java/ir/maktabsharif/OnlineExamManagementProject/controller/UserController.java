@@ -2,8 +2,10 @@ package ir.maktabsharif.OnlineExamManagementProject.controller;
 
 import ir.maktabsharif.OnlineExamManagementProject.exception.InvalidPasswordException;
 import ir.maktabsharif.OnlineExamManagementProject.exception.NotFoundException;
+import ir.maktabsharif.OnlineExamManagementProject.model.dto.CourseDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
+import ir.maktabsharif.OnlineExamManagementProject.service.CourseService;
 import ir.maktabsharif.OnlineExamManagementProject.service.UserService;
 import ir.maktabsharif.OnlineExamManagementProject.service.Impl.UserServiceImpl;
 import ir.maktabsharif.OnlineExamManagementProject.utility.Util;
@@ -14,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,87 +33,67 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@Valid @RequestBody UserDto.SignupRequest signupRequestDto,
-                                               BindingResult bindingResult) {
+    public ResponseEntity<UserDto.Response> registerUser(@Valid @RequestBody UserDto.SignupRequest signupRequestDto, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body("Validation failed,please Enter Correct Details" + bindingResult.getAllErrors().toString());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        userService.save(signupRequestDto);
-        return ResponseEntity.ok("Signup successfully");
+        UserDto.Response response = userService.save(signupRequestDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 
-    @PostMapping("/login")
-    public ResponseEntity<String> loginUser(@Valid @RequestBody UserDto.LoginRequest loginRequestDto,
-                                            BindingResult bindingResult, HttpSession session) {
-
-        if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body("Validation failed,please Enter Correct Details");
-        }
-
-        try {
-            UserDto.Response userResponse = userService.authenticate(loginRequestDto);
-
-            session.setAttribute("loggedInUser", userResponse);
-
-            return ResponseEntity.ok("Login successfully");
-        } catch (NotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found: " + e.getMessage());
-        } catch (InvalidPasswordException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid password: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred: " + e.getMessage());
-        }
-    }
+//    @PostMapping("/login")
+//    public ResponseEntity<UserDto.Response> loginUser(@Valid @RequestBody UserDto.LoginRequest loginRequestDto, BindingResult bindingResult) {
+//        if (bindingResult.hasErrors()) {
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+//
+//        UserDto.Response userResponse = userService.authenticate(loginRequestDto);
+//        return ResponseEntity.status(HttpStatus.OK).body(userResponse);
+//    }
 
     @GetMapping("/all")
-    public List<UserDto.Response> getAllUsers() {
-        return userService.findAll();
+    public ResponseEntity<List<UserDto.Response>> getAllUsers() {
+        return ResponseEntity.status(HttpStatus.FOUND).body(userService.findAll());
     }
 
 
     @PutMapping("/approve/{id}")
-    public UserDto.Response approveUser(@PathVariable Long id) {
-        return userService.approveUser(id);
+    public ResponseEntity<UserDto.Response> approveUser(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.approveUser(id));
     }
 
 
     @PutMapping("/edit-user")
-    public ResponseEntity<String> editUser(
-            @Valid @RequestBody UserDto.EditUserRequest editRequest,
-            BindingResult bindingResult,
-            HttpSession session) {
-
-        UserDto.Response loggedInUser = (UserDto.Response) session.getAttribute("loggedInUser");
-
-        if (loggedInUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You are not logged in");
-        }
-
+    public ResponseEntity<UserDto.Response> editUser(@Valid @RequestBody UserDto.EditUserRequest editRequest, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {
-            return ResponseEntity.badRequest().body(bindingResult.getAllErrors().toString());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         UserDto.Response updatedUser = userService.editUserInfo(editRequest);
-
-        return ResponseEntity.ok("User information updated successfully");
+        return ResponseEntity.status(HttpStatus.OK).body(updatedUser);
     }
 
 
     @GetMapping("/search-by-role")
-    public List<UserDto.Response> getUsersByRole(@RequestParam String role) {
-        return userService.searchUsersByRole(role).stream().map(Util::convertToUserResponse).toList();
+    public ResponseEntity<List<UserDto.Response>> getUsersByRole(@RequestParam String role) {
+        List<UserDto.Response> list = userService.searchUsersByRole(role).stream().map(Util::convertToUserResponse).toList();
+
+        return ResponseEntity.status(HttpStatus.FOUND).body(list);
     }
 
 
     @GetMapping("/search")
-    public List<UserDto.Response> searchUsers(@RequestParam String searchedText) {
-        return userService.searchUsersByFirstNameLastNameUsername(searchedText).stream().map(Util::convertToUserResponse).toList();
+    public ResponseEntity<List<UserDto.Response>> searchUsers(@RequestParam String searchedText) {
+        List<UserDto.Response> list = userService.searchUsersByFirstNameLastNameUsername(searchedText).stream().map(Util::convertToUserResponse).toList();
+        return ResponseEntity.status(HttpStatus.FOUND).body(list);
     }
 
     @GetMapping("/filter")
-    public List<UserDto.Response> filterUsers(@RequestParam String role ,@RequestParam String searchedText) {
-        return userService.filterByRoleAndSearchedWord(role,searchedText);
+    public ResponseEntity<List<UserDto.Response>> filterUsers(@RequestParam String role, @RequestParam String searchedText) {
+        List<UserDto.Response> responseList = userService.filterByRoleAndSearchedWord(role, searchedText);
+        return ResponseEntity.status(HttpStatus.FOUND).body(responseList);
     }
+
 
 }

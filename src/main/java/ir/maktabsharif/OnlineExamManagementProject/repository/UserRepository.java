@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
             "OR LOWER(u.username) LIKE LOWER(CONCAT('%', :searchedWord, '%')))")
     List<User> filterByRoleAndSearchedWord(@Param("role") UserRole role, @Param("searchedWord") String searchedWord);
 
-    Optional<User> findUserByUsername(String username);
+    Optional<User> findByUsername(String username);
 
     Optional<User> findUserByEmail(String email);
 

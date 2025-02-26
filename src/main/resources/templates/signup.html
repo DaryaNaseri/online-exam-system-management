@@ -8,7 +8,7 @@
 </head>
 <body>
 <div class="wrapper">
-    <form action="users/register">
+    <form id="registerForm">
         <h2>Signup</h2>
         <div class="input-field">
             <input type="email" required>
@@ -25,11 +25,49 @@
             <label>Enter your password</label>
             <small style="color: black;">most be at least 6 character</small>
         </div>
+        <div class="input-field">
+            <label for="role">choose you role:</label>
+            <select id="role" name="role" required>
+                <option value="student">student</option>
+                <option value="teacher">teacher</option>
+            </select>
+        </div>
         <button type="submit">Register</button>
         <div class="register">
-            <p>Do you have an account? <a href="users/login">Register</a></p>
+            <p>Do you have an account? <a href="login.html">login</a></p>
         </div>
     </form>
 </div>
+<!--<script>-->
+<!--    document.getElementById('registerForm').addEventListener('submit', function(e) {-->
+<!--        e.preventDefault();-->
+<!--        const email = document.getElementById('email').value;-->
+<!--        const username = document.getElementById('username').value;-->
+<!--        const password = document.getElementById('password').value;-->
+<!--        const role = document.getElementById('role').value;-->
+
+<!--        fetch('http://localhost:8080/users/register', {-->
+<!--            method: 'POST',-->
+<!--            headers: {-->
+<!--                'Content-Type': 'application/json'-->
+<!--            },-->
+<!--            body: JSON.stringify({ role,email, username, password})-->
+<!--        })-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                if (data) {-->
+<!--                    alert('signup successfully');-->
+<!--                    window.location.href = 'login.html';-->
+<!--                } else {-->
+<!--                    alert('error in signup, try again');-->
+<!--                    window.location.href = 'signup.html';-->
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('Error:', error);-->
+<!--                alert('error in signup, try again');-->
+<!--            });-->
+<!--    });-->
+<!--</script>-->
 </body>
 </html>

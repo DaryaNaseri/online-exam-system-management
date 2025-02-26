@@ -6,16 +6,20 @@ import ir.maktabsharif.OnlineExamManagementProject.exception.NotFoundException;
 import ir.maktabsharif.OnlineExamManagementProject.exception.UsernameOrEmailMustBeUniqueException;
 import ir.maktabsharif.OnlineExamManagementProject.model.*;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
+import ir.maktabsharif.OnlineExamManagementProject.model.entity.Admin;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Student;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Teacher;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
+import ir.maktabsharif.OnlineExamManagementProject.repository.AdminRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.StudentRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.TeacherRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.UserRepository;
-import ir.maktabsharif.OnlineExamManagementProject.security.BCryptPasswordEncode;
+import ir.maktabsharif.OnlineExamManagementProject.repository.auth.RoleRepository;
 import ir.maktabsharif.OnlineExamManagementProject.service.UserService;
 import ir.maktabsharif.OnlineExamManagementProject.utility.Util;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,39 +32,66 @@ public class UserServiceImpl implements UserService {
     private UserRepository userRepository;
     private StudentRepository studentRepository;
     private TeacherRepository teacherRepository;
-
+    private PasswordEncoder passwordEncoder;
+    private RoleRepository roleRepository;
+private AdminRepository adminRepository;
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository,
                            StudentRepository studentRepository,
-                           TeacherRepository teacherRepository) {
+                           TeacherRepository teacherRepository,
+                           PasswordEncoder passwordEncoder,
+                           RoleRepository roleRepository,
+                           AdminRepository adminRepository) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.roleRepository = roleRepository;
+        this.adminRepository = adminRepository;
     }
 
 
     @Override
-    public void save(UserDto.SignupRequest entity) {
-        if (userRepository.findUserByUsername(entity.username()).isPresent()) {
+    public UserDto.Response save(UserDto.SignupRequest entity) {
+        if (userRepository.findByUsername(entity.username()).isPresent()) {
             throw new UsernameOrEmailMustBeUniqueException("this username has been taken");
         } else if (userRepository.findUserByEmail(entity.email()).isPresent()) {
             throw new UsernameOrEmailMustBeUniqueException("this email has been used");
         }
-        saveUser(entity, entity.userRole());
+        return saveUser(entity);
+    }
+
+    @Override
+    public User registerAdmin(RegistrationStatus status,String email, String password, String username, UserRole role) {
+        Admin user = new Admin();
+        user.setStatus(status);
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        return adminRepository.save(user);
     }
 
 
-    private void saveUser(UserDto.SignupRequest entity, UserRole role) {
-        User user;
-        String password = BCryptPasswordEncode.encodeBCryptPassword(entity.password());
-        if (role == UserRole.STUDENT) {
-            user = new Student(entity.email(),password, entity.username(), role, RegistrationStatus.PENDING);
+    private UserDto.Response saveUser(UserDto.SignupRequest entity) {
+        User user = new User();
+        String password = passwordEncoder.encode(entity.password());
+
+        if (entity.userRole() == UserRole.STUDENT) {
+            user = new Student(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
+            user.getRoles().add(roleRepository.findByName(entity.userRole().name()));
             studentRepository.save((Student) user);
-        } else if (role == UserRole.TEACHER) {
-            user = new Teacher(entity.email(), password, entity.username(), role, RegistrationStatus.PENDING);
+
+        } else if (entity.userRole() == UserRole.TEACHER) {
+            user = new Teacher(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
+            user.getRoles().add(roleRepository.findByName(entity.userRole().name()));
             teacherRepository.save((Teacher) user);
+
         }
+
+        return Util.convertToUserResponse(user);
+
     }
 
 
@@ -77,7 +108,6 @@ public class UserServiceImpl implements UserService {
                 .map(Util::convertToUserResponse)
                 .collect(Collectors.toList());
     }
-
 
 
     @Override
@@ -120,13 +150,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto.Response authenticate(UserDto.LoginRequest loginRequest) {
-
-
-
-        User user = userRepository.findUserByUsername(loginRequest.username())
+        User user = userRepository.findByUsername(loginRequest.username())
                 .orElseThrow(() -> new NotFoundException("User not found with username: " + loginRequest.username()));
 
-        if (!BCryptPasswordEncode.verifyBCryptPassword(loginRequest.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
             throw new InvalidPasswordException("Invalid password for user: " + loginRequest.username());
         }
 
@@ -137,21 +164,21 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto.Response editUserInfo(UserDto.EditUserRequest editUserRequest) {
 
-        User user = userRepository.findById(editUserRequest.getId())
+        User user = userRepository.findById(editUserRequest.id())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        user.setRole(Util.getUpdatedValue(editUserRequest.getRole(), user.getRole()));
-        user.setUsername(Util.getUpdatedValue(editUserRequest.getUsername(), user.getUsername()));
-        user.setEmail(Util.getUpdatedValue(editUserRequest.getEmail(), user.getEmail()));
-        user.setFirstName(Util.getUpdatedValue(editUserRequest.getFirstName(), user.getFirstName()));
-        user.setLastName(Util.getUpdatedValue(editUserRequest.getLastName(), user.getLastName()));
-        user.setStatus(Util.getUpdatedValue(editUserRequest.getStatus(), user.getStatus()));
+        user.setRole(Util.getUpdatedValue(editUserRequest.role(), user.getRole()));
+        user.setUsername(Util.getUpdatedValue(editUserRequest.username(), user.getUsername()));
+        user.setEmail(Util.getUpdatedValue(editUserRequest.email(), user.getEmail()));
+        user.setFirstName(Util.getUpdatedValue(editUserRequest.firstName(), user.getFirstName()));
+        user.setLastName(Util.getUpdatedValue(editUserRequest.lastName(), user.getLastName()));
+        user.setStatus(Util.getUpdatedValue(editUserRequest.status(), user.getStatus()));
 
-        if (editUserRequest.getPassword() != null &&
-                !BCryptPasswordEncode.verifyBCryptPassword(editUserRequest.getPassword(), user.getPassword())) {
+        if (editUserRequest.password() != null &&
+                !passwordEncoder.matches(editUserRequest.password(), user.getPassword())) {
 
-                user.setPassword(BCryptPasswordEncode.encodeBCryptPassword(editUserRequest.getPassword()));
-            }
+            user.setPassword(passwordEncoder.encode(editUserRequest.password()));
+        }
 
 
         userRepository.save(user);

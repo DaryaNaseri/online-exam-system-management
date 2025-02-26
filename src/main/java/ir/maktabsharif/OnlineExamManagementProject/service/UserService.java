@@ -1,5 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.service;
 
+import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
+import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.service.base.BaseService;
@@ -9,7 +11,9 @@ import java.util.Optional;
 
 public interface UserService extends BaseService<User> {
 
-    void save(UserDto.SignupRequest entity);
+    UserDto.Response save(UserDto.SignupRequest entity);
+
+    User registerAdmin(RegistrationStatus status, String email, String password, String username, UserRole role);
 
     List<UserDto.Response> findAll();
 
@@ -26,7 +30,5 @@ public interface UserService extends BaseService<User> {
     List<User> searchUsersByFirstNameLastNameUsername(String searchText);
 
     List<UserDto.Response> filterByRoleAndSearchedWord(String role, String searchedWord);
-
-
 
 }
