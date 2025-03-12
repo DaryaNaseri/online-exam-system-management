@@ -1,15 +1,15 @@
 package ir.maktabsharif.OnlineExamManagementProject.service.Impl;
 
 import ir.maktabsharif.OnlineExamManagementProject.exception.InvalidInputException;
-import ir.maktabsharif.OnlineExamManagementProject.exception.InvalidPasswordException;
-import ir.maktabsharif.OnlineExamManagementProject.exception.NotFoundException;
+import ir.maktabsharif.OnlineExamManagementProject.exception.ResourceNotFoundException;
 import ir.maktabsharif.OnlineExamManagementProject.exception.UsernameOrEmailMustBeUniqueException;
-import ir.maktabsharif.OnlineExamManagementProject.model.*;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Admin;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Student;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.Teacher;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.RegistrationStatus;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.repository.AdminRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.StudentRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.TeacherRepository;
@@ -17,8 +17,6 @@ import ir.maktabsharif.OnlineExamManagementProject.repository.UserRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.auth.RoleRepository;
 import ir.maktabsharif.OnlineExamManagementProject.service.UserService;
 import ir.maktabsharif.OnlineExamManagementProject.utility.Util;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,15 +32,9 @@ public class UserServiceImpl implements UserService {
     private TeacherRepository teacherRepository;
     private PasswordEncoder passwordEncoder;
     private RoleRepository roleRepository;
-private AdminRepository adminRepository;
+    private AdminRepository adminRepository;
 
-    @Autowired
-    public UserServiceImpl(UserRepository userRepository,
-                           StudentRepository studentRepository,
-                           TeacherRepository teacherRepository,
-                           PasswordEncoder passwordEncoder,
-                           RoleRepository roleRepository,
-                           AdminRepository adminRepository) {
+    public UserServiceImpl(UserRepository userRepository, StudentRepository studentRepository, TeacherRepository teacherRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository, AdminRepository adminRepository) {
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
         this.teacherRepository = teacherRepository;
@@ -51,19 +43,41 @@ private AdminRepository adminRepository;
         this.adminRepository = adminRepository;
     }
 
-
     @Override
     public UserDto.Response save(UserDto.SignupRequest entity) {
         if (userRepository.findByUsername(entity.username()).isPresent()) {
             throw new UsernameOrEmailMustBeUniqueException("this username has been taken");
-        } else if (userRepository.findUserByEmail(entity.email()).isPresent()) {
+        } else if (userRepository.findByEmail(entity.email()).isPresent()) {
             throw new UsernameOrEmailMustBeUniqueException("this email has been used");
         }
         return saveUser(entity);
     }
 
+
+    private UserDto.Response saveUser(UserDto.SignupRequest entity) {
+        User user = new User();
+        String password = passwordEncoder.encode(entity.password());
+
+        if (entity.userRole() == UserRole.STUDENT) {
+            user = new Student(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
+            user.getRoles().add(roleRepository.findByName("ROLE_" + entity.userRole().name()));
+            studentRepository.save((Student) user);
+        } else if (entity.userRole() == UserRole.TEACHER) {
+            user = new Teacher(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
+            user.getRoles().add(roleRepository.findByName("ROLE_" + entity.userRole().name()));
+            teacherRepository.save((Teacher) user);
+        } else if (entity.userRole() == UserRole.ADMIN) {
+            user = new Admin(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.ACTIVE);
+            user.getRoles().add(roleRepository.findByName("ROLE_" + entity.userRole().name()));
+            adminRepository.save((Admin) user);
+        }
+
+        return Util.convertToUserResponse(user);
+    }
+
+
     @Override
-    public User registerAdmin(RegistrationStatus status,String email, String password, String username, UserRole role) {
+    public User registerAdmin(RegistrationStatus status, String email, String password, String username, UserRole role) {
         Admin user = new Admin();
         user.setStatus(status);
         user.setUsername(username);
@@ -74,24 +88,27 @@ private AdminRepository adminRepository;
     }
 
 
-    private UserDto.Response saveUser(UserDto.SignupRequest entity) {
-        User user = new User();
-        String password = passwordEncoder.encode(entity.password());
+    @Override
+    public User registerTeacher(RegistrationStatus status, String email, String password, String username, UserRole role) {
+        Teacher user = new Teacher();
+        user.setStatus(status);
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        return teacherRepository.save(user);
+    }
 
-        if (entity.userRole() == UserRole.STUDENT) {
-            user = new Student(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
-            user.getRoles().add(roleRepository.findByName(entity.userRole().name()));
-            studentRepository.save((Student) user);
 
-        } else if (entity.userRole() == UserRole.TEACHER) {
-            user = new Teacher(entity.email(), password, entity.username(), entity.userRole(), RegistrationStatus.PENDING);
-            user.getRoles().add(roleRepository.findByName(entity.userRole().name()));
-            teacherRepository.save((Teacher) user);
-
-        }
-
-        return Util.convertToUserResponse(user);
-
+    @Override
+    public User registerStudent(RegistrationStatus status, String email, String password, String username, UserRole role) {
+        Student user = new Student();
+        user.setStatus(status);
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRole(role);
+        return studentRepository.save(user);
     }
 
 
@@ -100,7 +117,7 @@ private AdminRepository adminRepository;
         List<User> users = userRepository.findAll();
 
         if (users.isEmpty()) {
-            throw new NotFoundException("There are no users in the database");
+            throw new ResourceNotFoundException("There are no users in the database");
         }
 
         return users.stream()
@@ -116,7 +133,7 @@ private AdminRepository adminRepository;
             user.setStatus(RegistrationStatus.APPROVED);
             User updatedUser = this.save(user);
             return Util.convertToUserResponse(updatedUser);
-        }).orElseThrow(() -> new NotFoundException("There is no such user with this id" + id));
+        }).orElseThrow(() -> new ResourceNotFoundException("There is no such user with this id" + id));
     }
 
 
@@ -148,17 +165,17 @@ private AdminRepository adminRepository;
     }
 
 
-    @Override
-    public UserDto.Response authenticate(UserDto.LoginRequest loginRequest) {
-        User user = userRepository.findByUsername(loginRequest.username())
-                .orElseThrow(() -> new NotFoundException("User not found with username: " + loginRequest.username()));
-
-        if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
-            throw new InvalidPasswordException("Invalid password for user: " + loginRequest.username());
-        }
-
-        return Util.convertToUserResponse(user);
-    }
+//    @Override
+//    public UserDto.Response authenticate(UserDto.LoginRequest loginRequest) {
+//        User user = userRepository.findByUsername(loginRequest.username())
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + loginRequest.username()));
+//
+//        if (!passwordEncoder.matches(loginRequest.password(), user.getPassword())) {
+//            throw new InvalidPasswordException("Invalid password for user: " + loginRequest.username());
+//        }
+//
+//        return Util.convertToUserResponse(user);
+//    }
 
 
     @Override
@@ -180,7 +197,6 @@ private AdminRepository adminRepository;
             user.setPassword(passwordEncoder.encode(editUserRequest.password()));
         }
 
-
         userRepository.save(user);
 
         return Util.convertToUserResponse(user);
@@ -191,6 +207,7 @@ private AdminRepository adminRepository;
     public List<User> searchUsersByFirstNameLastNameUsername(String searchText) {
         return userRepository.findBySearchedWord(searchText.trim().toLowerCase());
     }
+
 
     @Override
     public List<UserDto.Response> filterByRoleAndSearchedWord(String role, String searchedWord) {

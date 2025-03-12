@@ -19,8 +19,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(apiError);
     }
 
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ResponseDto.ApiError> handleNotFound(NotFoundException e) {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleNotFound(ResourceNotFoundException e) {
         ResponseDto.ApiError apiError = new ResponseDto.ApiError(
                 HttpStatus.NOT_FOUND.value(),
                 "We couldn't find the requested.",
@@ -75,9 +75,51 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @ExceptionHandler(TeacherNotAssignedToCourseException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleTeacherNotAssignedToCourse(TeacherNotAssignedToCourseException ex) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.FORBIDDEN.value(),
+                ex.getMessage(),
+                ""
+        );
 
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
+    @ExceptionHandler(ResourceIsEmptyException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleResourceIsEmptyException(ResourceIsEmptyException e) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "this resource might be empty.",
+                e.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
+    @ExceptionHandler(QuestionIsAlreadyExistsInExamException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleQuestionIsAlreadyExistsInExamException(QuestionIsAlreadyExistsInExamException e) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "this question is already exist in the exam.",
+                e.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleRuntimeException(RuntimeException e) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Runtime Error.",
+                e.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(ExamExpiredException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleExamExpiredException (ExamExpiredException  e) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "The exam time has expired. You cannot continue the exam.",
+                e.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
 }

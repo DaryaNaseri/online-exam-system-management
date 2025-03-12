@@ -1,7 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.service;
 
-import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
-import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.RegistrationStatus;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
 import ir.maktabsharif.OnlineExamManagementProject.service.base.BaseService;
@@ -14,6 +14,8 @@ public interface UserService extends BaseService<User> {
     UserDto.Response save(UserDto.SignupRequest entity);
 
     User registerAdmin(RegistrationStatus status, String email, String password, String username, UserRole role);
+    User registerTeacher(RegistrationStatus status, String email, String password, String username, UserRole role);
+    User registerStudent(RegistrationStatus status, String email, String password, String username, UserRole role);
 
     List<UserDto.Response> findAll();
 
@@ -23,7 +25,7 @@ public interface UserService extends BaseService<User> {
 
     List<User> searchUsersByRole(String role);
 
-    UserDto.Response authenticate(UserDto.LoginRequest loginRequest);
+//    UserDto.Response authenticate(UserDto.LoginRequest loginRequest);
 
     UserDto.Response editUserInfo(UserDto.EditUserRequest editUserRequest);
 

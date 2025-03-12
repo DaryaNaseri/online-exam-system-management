@@ -1,8 +1,8 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
-import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.RegistrationStatus;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.UserRole;
 import jakarta.validation.constraints.*;
 
 public interface UserDto {

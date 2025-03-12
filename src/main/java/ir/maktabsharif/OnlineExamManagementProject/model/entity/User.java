@@ -1,7 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.entity;
 
-import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
-import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.RegistrationStatus;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.UserRole;
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
 import ir.maktabsharif.OnlineExamManagementProject.model.permision.Role;
 import jakarta.persistence.*;
@@ -99,6 +99,15 @@ public class User extends BaseEntity<Long> {
 
     }
 
+    public User(String email, String password, String username, UserRole role, Set<Role> roles, RegistrationStatus status) {
+        this.email = email;
+        this.password = password;
+        this.username = username;
+        this.role = role;
+        this.roles = roles;
+        this.status = status;
+    }
+
     public static UserBuilder builder() {
         return new UserBuilder();
     }
@@ -168,54 +177,54 @@ public class User extends BaseEntity<Long> {
     }
 
     public static class UserBuilder {
-        private User account;
+        private User user;
 
         public UserBuilder() {
-            account = new User();
+            user = new User();
         }
 
         public UserBuilder username(String username) {
-            account.setUsername(username);
+            user.setUsername(username);
             return this;
         }
 
         public UserBuilder password(String password) {
-            account.setPassword(password);
+            user.setPassword(password);
             return this;
         }
 
         public UserBuilder firstName(String firstName) {
-            account.setFirstName(firstName);
+            user.setFirstName(firstName);
             return this;
         }
 
         public UserBuilder lastName(String lastName) {
-            account.setLastName(lastName);
+            user.setLastName(lastName);
             return this;
         }
 
         public UserBuilder email(String email) {
-            account.setEmail(email);
+            user.setEmail(email);
             return this;
         }
 
         public UserBuilder role(UserRole role) {
-            account.setRole(role);
+            user.setRole(role);
             return this;
         }
 
         public UserBuilder status(RegistrationStatus status) {
-            account.setStatus(status);
+            user.setStatus(status);
             return this;
         }
 
         public UserBuilder roles(Set<Role> roles) {
-            account.setRoles(roles);
+            user.setRoles(roles);
             return this;
         }
 
         public User build() {
-            return account;
+            return user;
         }
 
     }

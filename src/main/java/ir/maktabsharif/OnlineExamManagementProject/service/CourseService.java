@@ -20,9 +20,9 @@ public interface CourseService extends BaseService<Course> {
 
     CourseDto.CourseTeacherDto assignTeacherToCourse(Long courseId, Long userId);
 
-    void deleteStudentFromCourse(Long courseId,Long userId);
+    void deleteStudentFromCourse(Long courseId, Long userId);
 
-    void unassignTeacherFromCourse(Long courseId,Long userId);
+    void unassignTeacherFromCourse(Long courseId, Long userId);
 
     List<UserDto.Response> findAllStudents(Long courseId);
 
@@ -30,7 +30,9 @@ public interface CourseService extends BaseService<Course> {
 
     List<CourseDto.Response> findCoursesByTeacherId(Long teacherId);
 
+    CourseDto.Response updateCourse(CourseDto.EditRequest courseDTO);
 
+    Boolean isTeacherOfCourse(Long teacherId, Long courseId);
 
-
+    List<CourseDto.Response> getStudentCourses(Long id);
 }

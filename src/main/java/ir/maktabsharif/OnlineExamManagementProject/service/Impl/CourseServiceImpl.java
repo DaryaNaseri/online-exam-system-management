@@ -1,7 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.service.Impl;
 
 import ir.maktabsharif.OnlineExamManagementProject.exception.InvalidInputException;
-import ir.maktabsharif.OnlineExamManagementProject.exception.NotFoundException;
+import ir.maktabsharif.OnlineExamManagementProject.exception.ResourceNotFoundException;
 import ir.maktabsharif.OnlineExamManagementProject.exception.CourseCodeMustBeUniqueException;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.CourseDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.UserDto;
@@ -12,31 +12,21 @@ import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 import ir.maktabsharif.OnlineExamManagementProject.repository.CourseRepository;
 import ir.maktabsharif.OnlineExamManagementProject.repository.UserRepository;
 import ir.maktabsharif.OnlineExamManagementProject.service.CourseService;
-import ir.maktabsharif.OnlineExamManagementProject.service.UserService;
 import ir.maktabsharif.OnlineExamManagementProject.utility.Util;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
 
+@Service
+@RequiredArgsConstructor
 public class CourseServiceImpl implements CourseService {
 
     private final UserRepository userRepository;
-    private final UserService userService;
-    private CourseRepository courseRepository;
-
-
-    @Autowired
-    public CourseServiceImpl(CourseRepository courseRepository, UserRepository userRepository, UserService userService) {
-        this.courseRepository = courseRepository;
-        this.userRepository = userRepository;
-        this.userService = userService;
-    }
-
+    private final CourseRepository courseRepository;
 
     @Override
     public Course save(Course entity) {
@@ -70,7 +60,7 @@ public class CourseServiceImpl implements CourseService {
     public List<CourseDto.Response> findAll() {
         List<Course> courses = courseRepository.findAll();
         if (courses.isEmpty()) {
-            throw new NotFoundException("There are no courses in the database");
+            throw new ResourceNotFoundException("There are no courses in the database");
         }
         return courses.stream()
                 .map(this::convertToCourseResponse)
@@ -102,17 +92,17 @@ public class CourseServiceImpl implements CourseService {
         if (byId.isPresent()) {
             courseRepository.delete(byId.get());
         } else
-            throw new NotFoundException("Course not found");
+            throw new ResourceNotFoundException("Course not found");
     }
 
 
     @Override
     public CourseDto.CourseStudentsListDto addStudentToCourse(Long courseId, Long studentId) {
         User user = userRepository.findById(studentId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
         Util.validateUserStatus(user);
 
@@ -138,10 +128,10 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public CourseDto.CourseTeacherDto assignTeacherToCourse(Long courseId, Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
 
         Util.validateUserStatus(user);
@@ -168,10 +158,10 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public void deleteStudentFromCourse(Long courseId, Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
         if (!(user instanceof Student student)) {
             throw new InvalidInputException("User is not a student");
@@ -190,10 +180,10 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public void unassignTeacherFromCourse(Long courseId, Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
 
         if (!(user instanceof Teacher teacher)) {
@@ -213,7 +203,7 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public List<UserDto.Response> findAllStudents(Long courseId) {
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
         return courseRepository.findStudentsByCourse(foundCourse)
                 .stream()
@@ -226,17 +216,17 @@ public class CourseServiceImpl implements CourseService {
     @Override
     public UserDto.Response findTeacher(Long courseId) {
         Course foundCourse = courseRepository.findById(courseId)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
         Teacher teacher = courseRepository.findTeacherByCourseCode(
                         foundCourse.getCourseCode())
-                .orElseThrow(() -> new NotFoundException("No teacher has been assigned to this course yet."));
+                .orElseThrow(() -> new ResourceNotFoundException("No teacher has been assigned to this course yet."));
         return Util.convertToUserResponse(teacher);
     }
 
 
     public List<CourseDto.Response> findCoursesByTeacherId(Long teacherId) {
-        User user = userRepository.findById(teacherId).orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userRepository.findById(teacherId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (!(user instanceof Teacher teacher)) {
             throw new IllegalArgumentException("User is not a teacher");
         }
@@ -244,4 +234,42 @@ public class CourseServiceImpl implements CourseService {
                 .map(this::convertToCourseResponse)
                 .toList();
     }
+
+    @Override
+    public CourseDto.Response updateCourse(CourseDto.EditRequest courseDTO) {
+        Course foundCourse = courseRepository.findById(courseDTO.id()).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        foundCourse.setTitle(Util.getUpdatedValue(courseDTO.title(), foundCourse.getTitle()));
+        foundCourse.setCourseCode(Util.getUpdatedValue(courseDTO.courseCode(), foundCourse.getCourseCode()));
+        foundCourse.setStartDate(Util.getUpdatedValue(courseDTO.startDate(), foundCourse.getStartDate()));
+        foundCourse.setEndDate(Util.getUpdatedValue(courseDTO.endDate(), foundCourse.getEndDate()));
+
+        this.save(foundCourse);
+        return convertToCourseResponse(foundCourse);
+    }
+
+    @Override
+    public Boolean isTeacherOfCourse(Long teacherId, Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+        return course.getTeacher().getId().equals(teacherId);
+    }
+
+    @Override
+    public List<CourseDto.Response> getStudentCourses(Long id) {
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (!(user instanceof Student)) {
+            throw new InvalidInputException("User is not a student");
+        }
+
+        List<CourseDto.Response> list = ((Student) user).getCourses().stream().map(this::convertToCourseResponse).toList();
+
+        if (list.isEmpty()) {
+            throw new ResourceNotFoundException("Course might be empty");
+        }
+        return list;
+
+    }
+
 }

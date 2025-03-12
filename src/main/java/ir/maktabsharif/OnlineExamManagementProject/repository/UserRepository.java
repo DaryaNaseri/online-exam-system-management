@@ -1,7 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.repository;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
-import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
+import ir.maktabsharif.OnlineExamManagementProject.model.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -31,7 +31,7 @@ public interface UserRepository extends JpaRepository<User,Long> {
 
     Optional<User> findByUsername(String username);
 
-    Optional<User> findUserByEmail(String email);
+    Optional<User> findByEmail(String email);
 
     }
 

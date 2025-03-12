@@ -1,11 +1,6 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import ir.maktabsharif.OnlineExamManagementProject.model.RegistrationStatus;
-import ir.maktabsharif.OnlineExamManagementProject.model.UserRole;
 import jakarta.validation.constraints.*;
-
-import java.time.LocalDate;
 
 public interface ExamDto {
 
@@ -40,5 +35,13 @@ public interface ExamDto {
                     Integer duration
     ) {
     }
+
+    record SessionResponse(
+            Long id,
+            String title,
+            String description,
+            Integer duration,
+            boolean completed
+    ){}
 
 }

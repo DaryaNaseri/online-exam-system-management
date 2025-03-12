@@ -40,8 +40,19 @@ public class Course extends BaseEntity<Long> {
     )
     private List<Student> students = new ArrayList<>();
 
+    @OneToMany(mappedBy = "course")
+    private List<Exam> exams = new ArrayList<>();
+
     public static CourseBuilder builder() {
         return new CourseBuilder();
+    }
+
+    public List<Exam> getExams() {
+        return exams;
+    }
+
+    public void setExams(List<Exam> exams) {
+        this.exams = exams;
     }
 
     public String getTitle() {

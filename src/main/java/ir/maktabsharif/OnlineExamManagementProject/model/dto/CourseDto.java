@@ -41,4 +41,18 @@ public interface CourseDto {
             Long id,
             String courseCode
     ){}
+
+    record EditRequest(
+            @NotNull(message = "for edit you must enter course ID")
+            Long id,
+            @NotBlank(message = "title must not be blank")
+            String title,
+            @NotBlank(message = "course must have code")
+            String courseCode,
+            @NotNull(message = "when course will started? ")
+            LocalDate startDate,
+            @NotNull(message = "when course will end? ")
+            LocalDate endDate
+    ){}
+
 }

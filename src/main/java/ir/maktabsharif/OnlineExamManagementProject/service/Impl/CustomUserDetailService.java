@@ -1,9 +1,10 @@
-package ir.maktabsharif.OnlineExamManagementProject.service;
+package ir.maktabsharif.OnlineExamManagementProject.service.Impl;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.User;
 import ir.maktabsharif.OnlineExamManagementProject.model.permision.Authority;
 import ir.maktabsharif.OnlineExamManagementProject.model.permision.Role;
 import ir.maktabsharif.OnlineExamManagementProject.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,14 +16,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailService implements UserDetailsService {
     private final UserRepository userRepository;
 
 
-    public CustomUserDetailService( UserRepository userRepository) {
 
-        this.userRepository = userRepository;
-    }
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
@@ -38,12 +37,11 @@ public class CustomUserDetailService implements UserDetailsService {
             }
         }
 
-
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
                 user.getPassword(),
                 grantedAuthorities);
 
-
     }
+
 }

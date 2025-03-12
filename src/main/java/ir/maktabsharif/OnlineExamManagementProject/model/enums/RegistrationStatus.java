@@ -1,4 +1,4 @@
-package ir.maktabsharif.OnlineExamManagementProject.model;
+package ir.maktabsharif.OnlineExamManagementProject.model.enums;
 
 public enum RegistrationStatus {
     PENDING,

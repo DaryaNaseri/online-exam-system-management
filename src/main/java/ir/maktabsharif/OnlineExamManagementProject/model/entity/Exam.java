@@ -1,12 +1,13 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.entity;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.Question;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "exams")
@@ -22,9 +23,32 @@ public class Exam extends BaseEntity<Long> {
     private Integer duration;
 
     @ManyToOne
+    @JoinColumn(name = "teacher_id")
+    private Teacher teacher;
+
+    @ManyToOne
     //todo: it should be nullable false
     @JoinColumn(name = "course_id")
     private Course course;
+
+    @OneToMany(mappedBy = "exam")
+    private List<StudentExam> studentExams;
+
+    @OneToMany(mappedBy = "exam")
+    private List<ExamQuestion> examQuestions;
+
+
+//    @ManyToMany
+//    @JoinTable(
+//            name = "j_exams_questions",
+//            joinColumns = @JoinColumn(name = "exam_id"),
+//            inverseJoinColumns = @JoinColumn(name = "question_id")
+//    )
+//    private List<Question> questions= new ArrayList<>();
+
+
+//    private Double defaultScore;
+
 
     public Exam(String title, String description, Integer duration, Course course) {
         this.title = title;
@@ -36,11 +60,57 @@ public class Exam extends BaseEntity<Long> {
     public Exam() {
     }
 
+    public Exam(String title, String description, Integer duration) {
+        this.title = title;
+        this.description = description;
+        this.duration = duration;
+    }
+
 
     public static ExamBuilder builder() {
         return new ExamBuilder();
     }
 
+//      public List<Question> getQuestions() {
+//        return questions;
+//    }
+
+//    public void setQuestions(List<Question> questions) {
+//        this.questions = questions;
+//    }
+
+//    public Double getDefaultScore() {
+//        return defaultScore;
+//    }
+//
+//    public void setDefaultScore(Double defaultScore) {
+//        this.defaultScore = defaultScore;
+//    }
+
+
+    public List<StudentExam> getStudentExams() {
+        return studentExams;
+    }
+
+    public void setStudentExams(List<StudentExam> studentExams) {
+        this.studentExams = studentExams;
+    }
+
+    public List<ExamQuestion> getExamQuestions() {
+        return examQuestions;
+    }
+
+    public void setExamQuestions(List<ExamQuestion> examQuestions) {
+        this.examQuestions = examQuestions;
+    }
+
+    public Teacher getTeacher() {
+        return teacher;
+    }
+
+    public void setTeacher(Teacher teacher) {
+        this.teacher = teacher;
+    }
 
     public @NotBlank(message = "Title must not be blank") String getTitle() {
         return title;
@@ -98,6 +168,11 @@ public class Exam extends BaseEntity<Long> {
 
         public ExamBuilder course(Course course) {
             exam.setCourse(course);
+            return this;
+        }
+
+        public ExamBuilder teacher(Teacher teacher){
+            exam.setTeacher(teacher);
             return this;
         }
 
