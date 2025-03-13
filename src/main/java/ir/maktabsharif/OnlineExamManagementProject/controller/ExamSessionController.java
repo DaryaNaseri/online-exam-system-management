@@ -3,10 +3,9 @@ package ir.maktabsharif.OnlineExamManagementProject.controller;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.AnswerDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.QuestionDto;
-import ir.maktabsharif.OnlineExamManagementProject.model.entity.ExamQuestion;
+import ir.maktabsharif.OnlineExamManagementProject.model.dto.StudentExamAnswerDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.StudentExam;
-import ir.maktabsharif.OnlineExamManagementProject.model.entity.StudentExamAnswer;
-import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.Question;
+import ir.maktabsharif.OnlineExamManagementProject.service.ExamService;
 import ir.maktabsharif.OnlineExamManagementProject.service.ExamSessionService;
 import ir.maktabsharif.OnlineExamManagementProject.service.StudentExamAnswerService;
 import org.springframework.http.HttpStatus;
@@ -14,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,12 +21,13 @@ import java.util.Map;
 public class ExamSessionController {
 
     private ExamSessionService examSessionService;
-private StudentExamAnswerService studentExamAnswerService;
+    private StudentExamAnswerService studentExamAnswerService;
+    private ExamService examService;
 
-    public ExamSessionController(ExamSessionService examSessionService, StudentExamAnswerService studentExamAnswerService, Map<Long, StudentExam> activeExams) {
+    public ExamSessionController(ExamService examService, ExamSessionService examSessionService, StudentExamAnswerService studentExamAnswerService, Map<Long, StudentExam> activeExams) {
         this.examSessionService = examSessionService;
+        this.examService = examService;
         this.studentExamAnswerService = studentExamAnswerService;
-        this.activeExams = activeExams;
     }
 
     @PostMapping("/{examId}/start/student/{studentId}")
@@ -41,51 +40,47 @@ private StudentExamAnswerService studentExamAnswerService;
     }
 
     @GetMapping("/question/exam/{examId}/student/{studentId}")
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
     public ResponseEntity<QuestionDto.ResponseDto> getCurrentQuestion(
             @PathVariable Long studentId,
             @PathVariable Long examId) {
         QuestionDto.ResponseDto question =
-                examSessionService.getCurrentQuestion(studentId,examId, 0);
+                examSessionService.getFirstQuestion(studentId, examId, 0);
         return ResponseEntity.status(HttpStatus.FOUND).body(question);
     }
 
     @GetMapping("/{examId}/student/{studentId}/next-question")
-    public ResponseEntity<Question> getNextQuestion(
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
+    public ResponseEntity<QuestionDto.ResponseDto> getNextQuestion(
             @PathVariable Long examId,
             @PathVariable Long studentId) {
 
-        ExamQuestion nextQuestion = examSessionService.nextQuestion(examId, studentId);
-        return ResponseEntity.ok(nextQuestion.getQuestion());
+        QuestionDto.ResponseDto nextQuestion = examSessionService.nextQuestion(examId, studentId);
+        return ResponseEntity.status(HttpStatus.FOUND).body(nextQuestion);
     }
 
     @GetMapping("/{examId}/student/{studentId}/previous-question")
-    public ResponseEntity<Question> previousQuestion(
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
+    public ResponseEntity<QuestionDto.ResponseDto> previousQuestion(
             @PathVariable Long studentId,
             @PathVariable Long examId) {
 
-        ExamQuestion previousQuestion = examSessionService.previousQuestion(examId, studentId);
-        return ResponseEntity.ok(previousQuestion.getQuestion());
+        QuestionDto.ResponseDto previousQuestion = examSessionService.previousQuestion(examId, studentId);
+        return ResponseEntity.status(HttpStatus.FOUND).body(previousQuestion);
     }
-
 
 
     @PostMapping("/{examId}/student/{studentId}/finish")
-    public ResponseEntity<String> finishExam(
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
+    public ResponseEntity<StudentExamAnswerDto.Response> finishExam(
             @PathVariable Long examId,
             @PathVariable Long studentId) {
-        examSessionService.finishExam(examId,studentId);
-        return ResponseEntity.status(HttpStatus.OK).body("finished exam successfully");
+        StudentExamAnswerDto.Response response = examSessionService.finishExam(examId, studentId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    //..................................
-
-
-    private Map<Long, StudentExam> activeExams = new HashMap<>();
-
-
-
-
     @PostMapping("/question/answer")
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
     public ResponseEntity<AnswerDto.Response> saveAnswer(
             @RequestBody AnswerDto.SaveRequest answer) {
         AnswerDto.Response response = studentExamAnswerService.saveAnswer(answer);
@@ -94,13 +89,24 @@ private StudentExamAnswerService studentExamAnswerService;
 
 
     @GetMapping("/{examId}/student/{studentId}/answers")
+    @PreAuthorize("hasAuthority('VIEW_STUDENT_EXAM_ANSWERS')")
     public ResponseEntity<List<AnswerDto.AnswerResponse>> getStudentAnswers(
             @PathVariable Long examId,
             @PathVariable Long studentId) {
-        List<AnswerDto.AnswerResponse> answers = examSessionService.getStudentAnswers(studentId, examId);
+        List<AnswerDto.AnswerResponse> answers =
+                examSessionService.getStudentAnswers(studentId, examId);
         return ResponseEntity.status(HttpStatus.FOUND).body(answers);
     }
 
+    @GetMapping("exam/{examId}/student/{studentId}/total-score")
+    @PreAuthorize("hasAuthority('GET_EXAM_ACCESS')")
+    public ResponseEntity<Double> getTotalScore(
+            @PathVariable Long examId,
+            @PathVariable Long studentId
+    ) {
+        Double score = examService.completedExamTotalScore(examId, studentId);
+        return ResponseEntity.status(HttpStatus.FOUND).body(score);
+    }
 
 
     @GetMapping("/{examId}/time")
@@ -109,7 +115,6 @@ private StudentExamAnswerService studentExamAnswerService;
             @PathVariable Long examId) {
         return ResponseEntity.ok(examSessionService.getRemainingTime(examId));
     }
-
 
 
 }

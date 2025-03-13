@@ -18,4 +18,5 @@ public interface ExamService {
 
     List<ExamDto.Response> findAvailableExams (Long courseId,Long studentId);
 
+    Double completedExamTotalScore(Long examId, Long studentId);
 }

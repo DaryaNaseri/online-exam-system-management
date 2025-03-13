@@ -11,13 +11,11 @@ import java.util.List;
 public class StudentExamAnswer extends BaseEntity<Long> {
 
     @ManyToOne
-    //✔ ارتباط مستقیم پاسخ با StudentExam برای یکپارچگی بیشتر
-    //✔ امکان تغییر پاسخ قبل از ارسال نهایی
     @JoinColumn(name = "student_exam_id", nullable = false)
-    private StudentExam studentExam; // ارتباط پاسخ با جلسه آزمون
+    private StudentExam studentExam;
 
     @Column
-    private Double assignedScore; // نمره اختصاص داده شده به این پاسخ
+    private Double assignedScore;
 
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
@@ -32,15 +30,16 @@ public class StudentExamAnswer extends BaseEntity<Long> {
     private Question question;
 
     @Column(nullable = false)
-    private Boolean isFinalized = false; // آیا پاسخ نهایی شده است؟
+    private Boolean isFinalized = false;
 
     @Column
-    private String descriptiveAnswer; // پاسخ سوال تشریحی
+    private String descriptiveAnswer;
 
     @ElementCollection
-    @CollectionTable(name = "student_exam_answer_choices", joinColumns = @JoinColumn(name = "answer_id"))
+    @CollectionTable(name = "student_exam_answer_choices",
+            joinColumns = @JoinColumn(name = "student-exam-answer_id"))
     @Column(name = "selected_choice")
-    private List<String> selectedChoices; // پاسخ‌های چند گزینه‌ای (چون ممکن است چندتایی باشند)
+    private List<String> selectedChoices;
 
     public Student getStudent() {
         return student;

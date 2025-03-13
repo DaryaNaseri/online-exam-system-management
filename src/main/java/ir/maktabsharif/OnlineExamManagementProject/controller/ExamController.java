@@ -1,7 +1,11 @@
 package ir.maktabsharif.OnlineExamManagementProject.controller;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.ExamDto;
+import ir.maktabsharif.OnlineExamManagementProject.model.dto.StudentExamAnswerDto;
+import ir.maktabsharif.OnlineExamManagementProject.model.dto.StudentExamDto;
+import ir.maktabsharif.OnlineExamManagementProject.model.entity.StudentExam;
 import ir.maktabsharif.OnlineExamManagementProject.service.ExamService;
+import ir.maktabsharif.OnlineExamManagementProject.service.ExamSessionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,9 +18,11 @@ import java.util.List;
 public class ExamController {
 
     private final ExamService examService;
+private final ExamSessionService studentExamService;
 
-    public ExamController(ExamService examService) {
+    public ExamController(ExamSessionService studentExamService,ExamService examService) {
         this.examService = examService;
+        this.studentExamService = studentExamService;
     }
 
 
@@ -71,6 +77,25 @@ public class ExamController {
             @PathVariable Long teacherId,
             @PathVariable Long studentId,
             @PathVariable Long courseId) {
-        return ResponseEntity.ok(examService.findAvailableExams(courseId, studentId));
+        return ResponseEntity.status(HttpStatus.FOUND).body(examService.findAvailableExams(courseId, studentId));
     }
+
+
+    @GetMapping("/completed")
+    @PreAuthorize("hasAuthority('VIEW_COMPLETED_EXAM')")
+    public ResponseEntity<List<StudentExamDto.Response>> getCompletedExams(
+            @PathVariable Long teacherId) {
+        return ResponseEntity.status(HttpStatus.FOUND).body(studentExamService.getCompletedExamsByTeacher(teacherId));
+    }
+
+
+    @PostMapping("/score")
+    @PreAuthorize("hasAuthority('GIVE_SCORE')")
+    public ResponseEntity<StudentExamAnswerDto.Response> updateEssayScore(
+            @RequestBody StudentExamAnswerDto.Request request) {
+        StudentExamAnswerDto.Response response = studentExamService.updateDescriptiveScore(request);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
 }
+

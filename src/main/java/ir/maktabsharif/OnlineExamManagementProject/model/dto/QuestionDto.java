@@ -93,6 +93,10 @@ public interface QuestionDto {
 
         public DescriptiveQuestionResponse(Long id, String title, String content, Long teacherId) {
             super(id, title, content, teacherId, "descriptive");
+            this.id = id;
+            this.title = title;
+            this.content = content;
+            this.teacherId = teacherId;
         }
 
         @Override

@@ -1,6 +1,7 @@
 package ir.maktabsharif.OnlineExamManagementProject.utility;
 
 import ir.maktabsharif.OnlineExamManagementProject.exception.AccountNotVerifiedException;
+import ir.maktabsharif.OnlineExamManagementProject.model.dto.OptionDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.QuestionDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.DescriptiveQuestion;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.MultipleChoiceQuestion;
@@ -49,6 +50,29 @@ public class Util {
                 question.getTeacher().getId(),
                 qType
         );
+    }
+
+    public static QuestionDto.ResponseDto mapToQuestionDto(Question question) {
+        if (question instanceof MultipleChoiceQuestion mcq) {
+            return new QuestionDto.MultiChoiceQuestionResponse(
+                    mcq.getId(),
+                    mcq.getTitle(),
+                    mcq.getContent(),
+                    mcq.getTeacher().getId(),
+                    mcq.getOptions().stream()
+                            .map(opt -> new OptionDto.Response(opt.getId(), opt.getText()))
+                            .toList()
+            );
+        } else if (question instanceof DescriptiveQuestion dq) {
+            return new QuestionDto.DescriptiveQuestionResponse(
+                    dq.getId(),
+                    dq.getTitle(),
+                    dq.getContent(),
+                    dq.getTeacher().getId()
+            );
+        } else {
+            throw new IllegalStateException("Unexpected question type");
+        }
     }
 
 }

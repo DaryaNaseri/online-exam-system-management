@@ -4,7 +4,6 @@ import ir.maktabsharif.OnlineExamManagementProject.exception.*;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.OptionDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.dto.QuestionDto;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.*;
-import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.DescriptiveQuestion;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.MultipleChoiceQuestion;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.Options;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.question.Question;
@@ -19,11 +18,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.List;
 
 import static ir.maktabsharif.OnlineExamManagementProject.utility.Util.convertToQuestionResponse;
+import static ir.maktabsharif.OnlineExamManagementProject.utility.Util.mapToQuestionDto;
 
 @Service
 @RequiredArgsConstructor
@@ -35,20 +34,17 @@ public class QuestionServiceImpl implements QuestionService {
     private final CourseRepository courseRepository;
     private final ExamRepository examRepository;
     private final ExamQuestionRepository examQuestionRepository;
+    private final TeacherRepository teacherRepository;
 
 
     public List<QuestionDto.ResponseDto> questionsBank(Long teacherId, Long courseId) {
-        User user = userRepository.findById(teacherId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        if (!(user instanceof Teacher teacher)) {
-            throw new InvalidInputException("User is not a teacher");
-        }
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new ResourceNotFoundException("teacher not found"));
 
         Course foundCourse = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
 
-        if (!foundCourse.getTeacher().getId().equals(user.getId())) {
+        if (!foundCourse.getTeacher().getId().equals(teacher.getId())) {
             throw new TeacherNotAssignedToCourseException(teacherId, courseId);
         }
 
@@ -60,22 +56,30 @@ public class QuestionServiceImpl implements QuestionService {
             throw new ResourceIsEmptyException("resource might be empty");
         }
 
-        List<QuestionDto.ResponseDto> questionDtos = new ArrayList<>();
-        for (Question question : questionsByCourseAndTeacher) {
-            if (question instanceof MultipleChoiceQuestion) {
-                List<OptionDto.Response> optionDtos = new ArrayList<>();
-                for (Options option : ((MultipleChoiceQuestion) question).getOptions()) {
-                    optionDtos.add(new OptionDto.Response(option.getId(), option.getText()));
-                }
-                questionDtos.add(new QuestionDto.MultiChoiceQuestionResponse(question.getId(),question.getTitle(),question.getContent(),question.getTeacher().getId(),optionDtos));
-            }
-            if (question instanceof DescriptiveQuestion) {
-                questionDtos.add(new QuestionDto.DescriptiveQuestionResponse(question.getId(),question.getTitle(),question.getContent(),question.getTeacher().getId()));
-            }
+        return questionsByCourseAndTeacher.stream().map(Util::mapToQuestionDto).toList();
+
+    }
+
+
+    @Override
+    public List<QuestionDto.ResponseDto> getQuestionsForExam(Long examId) {
+        Exam found = examRepository.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
+
+        List<ExamQuestion> examQuestions = examQuestionRepository.findByExamId(examId);
+
+        if (examQuestions.isEmpty()) {
+            throw new ResourceNotFoundException("Question not found");
         }
 
-        return questionDtos;
+        List<Question> questions = new ArrayList<>();
+
+        for (ExamQuestion examQuestion : examQuestions) {
+            questions.add(examQuestion.getQuestion());
+        }
+
+        return questions.stream().map(Util::mapToQuestionDto).toList();
     }
+
 
     @Override
     public QuestionDto.ResponseDto addQuestionFromBank(Long examId, Long questionId) {
@@ -98,27 +102,9 @@ public class QuestionServiceImpl implements QuestionService {
 
         examQuestionRepository.save(examQuestion);
 
-        return convertToQuestionResponse(foundQuestion);
+        return mapToQuestionDto(foundQuestion);
     }
 
-    @Override
-    public List<QuestionDto.ResponseDto> getQuestionsForExam(Long examId) {
-        Exam found = examRepository.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
-
-        List<ExamQuestion> examQuestions = examQuestionRepository.findByExamId(examId);
-
-        if (examQuestions.isEmpty()) {
-            throw new ResourceNotFoundException("Question not found");
-        }
-
-        List<Question> questions = new ArrayList<>();
-
-        for (ExamQuestion examQuestion : examQuestions) {
-            questions.add(examQuestion.getQuestion());
-        }
-
-        return questions.stream().map(Util::convertToQuestionResponse).toList();
-    }
 
     @Override
     public QuestionDto.ResponseDto createQuestion(Long examId, QuestionDto.CreateRequest questionDto, Long teacherId) {
@@ -174,8 +160,9 @@ public class QuestionServiceImpl implements QuestionService {
 
         examQuestionRepository.save(examQuestion);
 
-        return convertToQuestionResponse(question);
+        return mapToQuestionDto(question);
     }
+
 
     @Override
     public Page<QuestionDto.ResponseDto> searchQuestions(String title, int page, int size) {
@@ -184,8 +171,9 @@ public class QuestionServiceImpl implements QuestionService {
                 questionRepository.findByTitleContainingIgnoreCase(title, pageable)
                         .orElseThrow(() -> new ResourceNotFoundException("Question not found"));
 
-        return questionPage.map(Util::convertToQuestionResponse);
+        return questionPage.map(Util::mapToQuestionDto);
     }
+
 
     @Override
     public List<QuestionDto.ResponseDto> searchQuestions(String title) {
@@ -193,8 +181,9 @@ public class QuestionServiceImpl implements QuestionService {
         if (byTitleContainingIgnoreCase.isEmpty()) {
             throw new ResourceNotFoundException("Question not found,");
         }
-        return byTitleContainingIgnoreCase.stream().map(Util::convertToQuestionResponse).toList();
+        return byTitleContainingIgnoreCase.stream().map(Util::mapToQuestionDto).toList();
     }
+
 
     @Override
     public QuestionDto.MultiChoiceQuestionResponse addOptionsToQuestion(Long questionId, List<OptionDto.CreateRequest> optionDtos) {
@@ -229,25 +218,10 @@ public class QuestionServiceImpl implements QuestionService {
         return questionRepository.save(entity);
     }
 
+
     @Override
     public void deleteById(Long id) {
 //todo
     }
-
-//
-//    public Question saveQuestionToExam(Question question, Long examId) {
-//        Exam exam = examRepository.findById(examId)
-//                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
-//
-//        if (!questionRepository.existsByContentAndTeacher_Id(question.getContent(), question.getTeacher().getId())) {
-//            questionRepository.save(question);
-//        }
-//
-//        exam.getQuestions().add(question);
-//        examRepository.save(exam);
-//
-//        return question;
-//    }
-
 
 }

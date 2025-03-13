@@ -113,6 +113,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorResponse);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ResponseDto.ApiError> handleIllegalStateException(IllegalStateException e) {
+        ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(
+                HttpStatus.BAD_REQUEST.value(),
+                "Runtime Error.",
+                e.getMessage());
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
     @ExceptionHandler(ExamExpiredException.class)
     public ResponseEntity<ResponseDto.ApiError> handleExamExpiredException (ExamExpiredException  e) {
         ResponseDto.ApiError errorResponse = new ResponseDto.ApiError(

@@ -14,7 +14,7 @@ public class ExamAutoFinisher {
     @Autowired
     private StudentExamRepository studentExamRepository;
 
-    @Scheduled(fixedRate = 60000) // هر دقیقه چک کن
+    @Scheduled(fixedRate = 10000)
     public void finishExpiredExams() {
         List<StudentExam> ongoingExams = studentExamRepository.findByCompletedFalse();
 

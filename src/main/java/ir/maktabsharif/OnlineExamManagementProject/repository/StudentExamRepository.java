@@ -1,6 +1,5 @@
 package ir.maktabsharif.OnlineExamManagementProject.repository;
 
-import ir.maktabsharif.OnlineExamManagementProject.model.entity.Student;
 import ir.maktabsharif.OnlineExamManagementProject.model.entity.StudentExam;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,14 +11,19 @@ import java.util.Optional;
 
 @Repository
 public interface StudentExamRepository extends JpaRepository<StudentExam, Long> {
-   @Query("SELECT se.exam.id FROM StudentExam se WHERE se.student.id = :studentId")
-   List<Long> findCompletedExamIdsByStudentId(@Param("studentId") Long studentId);
 
-   Optional<StudentExam> findByExamId(Long examId);
+    @Query("SELECT se.exam.id FROM StudentExam se WHERE se.student.id = :studentId")
+    List<Long> findCompletedExamIdsByStudentId(@Param("studentId") Long studentId);
 
-   List<StudentExam> findByStudentId(Long studentId);
+    Optional<StudentExam> findByExamId(Long examId);
 
-   List<StudentExam> findByCompletedFalse();
+    List<StudentExam> findByStudentId(Long studentId);
+
+    List<StudentExam> findByCompletedFalse();
 
     Optional<StudentExam> findByExamIdAndStudentId(Long examId, Long studentId);
+
+    List<StudentExam> findAllByCompletedFalse();
+
+    List<StudentExam> findByExamTeacherIdAndCompletedTrue(Long teacherId);
 }

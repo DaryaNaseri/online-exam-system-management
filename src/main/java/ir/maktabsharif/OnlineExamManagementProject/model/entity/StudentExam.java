@@ -1,15 +1,16 @@
 package ir.maktabsharif.OnlineExamManagementProject.model.entity;
 
 import ir.maktabsharif.OnlineExamManagementProject.model.base.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 public class StudentExam extends BaseEntity<Long> {
+
+    @OneToMany(mappedBy = "studentExam", cascade = CascadeType.ALL)
+    private List<StudentExamAnswer> studentExamAnswer;
 
     @ManyToOne
     @JoinColumn(name = "student_id")
@@ -21,24 +22,25 @@ public class StudentExam extends BaseEntity<Long> {
 
     private boolean completed = false;
 
-    private LocalDateTime startTime; // زمان شروع آزمون
+    private LocalDateTime startTime;
 
     @Column
-    private LocalDateTime endTime; // زمان پایان آزمون
+    private LocalDateTime endTime;
 
     @Column
-    private Integer currentQuestionIndex = 0; // آخرین سوالی که کاربر مشاهده کرد
+    private Integer currentQuestionIndex = 0;
 
     @Column
-    private Double totalScore; // نمره کل آزمون
+    private Double totalScore;
 
     @Column(nullable = false)
-    private boolean isGraded = false; // آیا تصحیح کامل شده؟
+    private boolean isGraded = false;
 
     public boolean isExamTimeExpired() {
         if (startTime == null || exam == null) {
-            return false; // اگر اطلاعات ناقص باشد، ازمون منقضی در نظر نمی‌گیریم
+            return false;
         }
+
         return LocalDateTime.now()
                 .isAfter(startTime.plusMinutes(exam.getDuration()));
     }
@@ -52,6 +54,14 @@ public class StudentExam extends BaseEntity<Long> {
 
     public StudentExam() {
 
+    }
+
+    public List<StudentExamAnswer> getStudentExamAnswer() {
+        return studentExamAnswer;
+    }
+
+    public void setStudentExamAnswer(List<StudentExamAnswer> studentExamAnswer) {
+        this.studentExamAnswer = studentExamAnswer;
     }
 
     public LocalDateTime getStartTime() {

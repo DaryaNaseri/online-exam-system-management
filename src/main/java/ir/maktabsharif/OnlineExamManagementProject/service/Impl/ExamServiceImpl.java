@@ -13,7 +13,7 @@ import ir.maktabsharif.OnlineExamManagementProject.utility.Util;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class ExamServiceImpl implements ExamService {
@@ -24,15 +24,18 @@ public class ExamServiceImpl implements ExamService {
     private TeacherRepository teacherRepository;
     private StudentRepository studentRepository;
     private StudentExamRepository studentExamRepository;
+    private StudentExamAnswerRepository studentExamAnswerRepository;
 
-    public ExamServiceImpl(StudentExamRepository studentExamRepository, StudentRepository studentRepository, ExamRepository examRepository, CourseService courseService, CourseRepository courseRepository, TeacherRepository teacherRepository) {
+    public ExamServiceImpl(StudentExamAnswerRepository studentExamAnswerRepository, StudentExamRepository studentExamRepository, StudentRepository studentRepository, ExamRepository examRepository, CourseService courseService, CourseRepository courseRepository, TeacherRepository teacherRepository) {
         this.examRepository = examRepository;
+        this.studentExamAnswerRepository = studentExamAnswerRepository;
         this.studentExamRepository = studentExamRepository;
         this.courseService = courseService;
         this.studentRepository = studentRepository;
         this.courseRepository = courseRepository;
         this.teacherRepository = teacherRepository;
     }
+
 
     public List<ExamDto.Response> findByCourse(Long courseId, Long teacherId) {
         Course foundCourseById = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
@@ -86,29 +89,6 @@ public class ExamServiceImpl implements ExamService {
         return convertToExamResponse(save);
     }
 
-    @Override
-    public List<ExamDto.Response> findAvailableExams(Long courseId, Long studentId) {
-        Course foundCourse = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
-
-        Student student = studentRepository.findById(studentId).orElseThrow(() -> new ResourceNotFoundException("student not found"));
-
-        List<Exam> exams = examRepository.findExamByCourse(foundCourse);
-
-        List<StudentExam> studentExams = studentExamRepository.findByStudentId(studentId);
-
-
-        List<Long> completedExamIdsByStudent = studentExamRepository.findCompletedExamIdsByStudentId(studentId);
-
-        List<Exam> availableExams = exams.stream()
-                .filter(exam -> studentExams.stream()
-                        .noneMatch(se ->
-                                se.getExam().getId().equals(exam.getId()) &&
-                                        se.isCompleted()))
-                .toList();
-
-
-        return availableExams.stream().map(this::convertToExamResponse).toList();
-    }
 
     private Boolean isTitleExistsInCourse(String title, Long courseId) {
         Course foundCourse = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
@@ -129,6 +109,7 @@ public class ExamServiceImpl implements ExamService {
         }
         examRepository.delete(exam);
     }
+
 
     public ExamDto.Response update(ExamDto.EditRequest examDto, Long teacherId, Long courseId) {
 
@@ -160,5 +141,43 @@ public class ExamServiceImpl implements ExamService {
 
     }
 
+    @Override
+    public List<ExamDto.Response> findAvailableExams(Long courseId, Long studentId) {
+        Course foundCourse = courseRepository.findById(courseId).orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        studentRepository.findById(studentId).orElseThrow(() -> new ResourceNotFoundException("student not found"));
+
+        List<Exam> exams = examRepository.findExamByCourse(foundCourse);
+
+        List<StudentExam> studentExams = studentExamRepository.findByStudentId(studentId);
+
+        studentExamRepository.findCompletedExamIdsByStudentId(studentId);
+
+        List<Exam> availableExams = exams.stream()
+                .filter(exam -> studentExams.stream()
+                        .noneMatch(se ->
+                                se.getExam().getId().equals(exam.getId()) &&
+                                        se.isCompleted()))
+                .toList();
+
+
+        return availableExams.stream().map(this::convertToExamResponse).toList();
+    }
+
+
+    public Double completedExamTotalScore(Long examId, Long studentId) {
+
+        StudentExam studentExam = studentExamRepository
+                .findByExamIdAndStudentId(examId, studentId)
+                .orElseThrow(() -> new RuntimeException("StudentExam not found"));
+
+        if (!studentExam.isCompleted() || !studentExam.isGraded()) {
+            throw new IllegalStateException("Exam is not completed or not graded yet.");
+        }
+
+        return Optional.ofNullable(studentExamAnswerRepository
+                        .getTotalScoreForCompletedExam(examId, studentId))
+                .orElse(0.0);
+    }
 
 }
